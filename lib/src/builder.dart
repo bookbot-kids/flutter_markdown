@@ -460,12 +460,42 @@ class MarkdownBuilder implements md.NodeVisitor {
         inline.children,
         textAlign,
       );
+
+      // Find the TextSpan that has url
+      TapGestureRecognizer childGesture;
+      mergedInlines.forEach((element) {
+        if (element is RichText) {
+          RichText text = element;
+          if (text.text is TextSpan) {
+            TextSpan rootSpan = text.text;
+            if (rootSpan.children != null) {
+              for (TextSpan span in rootSpan.children) {
+                if (span.recognizer != null &&
+                    span.recognizer is TapGestureRecognizer) {
+                  childGesture = span.recognizer;
+                  break;
+                }
+              }
+            }
+          }
+        }
+      });
+
       final Wrap wrap = Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
         children: mergedInlines,
         alignment: blockAlignment,
       );
-      _addBlockChild(wrap);
+
+      if (childGesture != null) {
+        _addBlockChild(GestureDetector(
+          onTap: () => childGesture.onTap(),
+          child: wrap,
+        ));
+      } else {
+        _addBlockChild(wrap);
+      }
+
       _inlines.clear();
     }
   }
